@@ -1,0 +1,44 @@
+/ This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/3/a/RAM8.hdl
+/**
+ * Memory of eight 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM8 {
+    IN in[16], load, address[3];
+    OUT out[16];
+
+    PARTS:
+    DMux8Way16(in=in[0..15], sel=address[0..2], a=sel1, b=sel2, c=sel3, d=sel4, e=sel5, f=sel6, g=sel7, h=sel8);
+   
+    Or16Way(in=sel1, out=isOne);
+    Or16Way(in=sel2, out=isTwo);
+    Or16Way(in=sel3, out=isThree);
+    Or16Way(in=sel4, out=isFour);
+    Or16Way(in=sel5, out=isFive);
+    Or16Way(in=sel6, out=isSix);
+    Or16Way(in=sel7, out=isSeven);
+    Or16Way(in=sel8, out=isEight);
+    And(a=isOne, b=load, out=loadOne);
+    And(a=isTwo, b=load, out=loadTwo);
+    And(a=isThree, b=load, out=loadThree);
+    And(a=isFour, b=load, out=loadFour);
+    And(a=isFive, b=load, out=loadFive);
+    And(a=isSix, b=load, out=loadSix);
+    And(a=isSeven, b=load, out=loadSeven);
+    And(a=isEight, b=load, out=loadEight);
+    Register(in=sel1, load=loadOne, out=reg1); 
+    Register(in=sel2, load=loadTwo, out=reg2); 
+    Register(in=sel3, load=loadThree, out=reg3); 
+    Register(in=sel4, load=loadFour, out=reg4); 
+    Register(in=sel5, load=loadFive, out=reg5); 
+    Register(in=sel6, load=loadSix, out=reg6); 
+    Register(in=sel7, load=loadSeven, out=reg7); 
+    Register(in=sel8, load=loadEight, out=reg8);
+
+    Mux8Way16(a=reg1, b=reg2, c=reg3, d=reg4, e=reg5, f=reg6, g=reg7, h=reg8, sel=address[0..2], out=out[0..15]); 
+}

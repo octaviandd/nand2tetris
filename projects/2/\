@@ -1,0 +1,391 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/2/ALU.hdl
+/**
+ * ALU (Arithmetic Logic Unit):
+ * Computes out = one of the following functions:
+ *                0, 1, -1,
+ *                x, y, !x, !y, -x, -y,
+ *                x + 1, y + 1, x - 1, y - 1,
+ *                x + y, x - y, y - x,
+ *                x & y, x | y
+ * on the 16-bit inputs x, y,
+ * according to the input bits zx, nx, zy, ny, f, no.
+ * In addition, computes the two output bits:
+ * if (out == 0) zr = 1, else zr = 0
+ * if (out < 0)  ng = 1, else ng = 0
+ */
+// Implementation: Manipulates the x and y inputs
+// and operates on the resulting values, as follows:
+// if (zx == 1) sets x = 0        // 16-bit constant
+// if (nx == 1) sets x = !x       // bitwise not
+// if (zy == 1) sets y = 0        // 16-bit constant
+// if (ny == 1) sets y = !y       // bitwise not
+// if (f == 1)  sets out = x + y  // integer 2's complement addition
+// if (f == 0)  sets out = x & y  // bitwise and
+// if (no == 1) sets out = !out   // bitwise not
+
+CHIP ALU {
+    IN  
+        x[16], y[16],  // 16-bit inputs        
+        zx, // zero the x input?
+        nx, // negate the x input?
+        zy, // zero the y input?
+        ny, // negate the y input?
+        f,  // compute (out = x + y) or (out = x & y)?
+        no; // negate the out output?
+    OUT 
+        out[16], // 16-bit output
+        zr,      // if (out == 0) equals 1, else 0
+        ng;      // if (out < 0)  equals 1, else 0
+
+    PARTS:
+    //// Replace this comment with your code.
+    Nand(a=zx, b=zx, out=invZx);
+    Nand(a=invZx, b=invZx, out=invInvZx);
+    And(a=invZx, b=invInvZx, out=none);
+    Nand(a=zy, b=zy, out=invZy);
+    Nand(a=invZy, b=invZy, out=invInvZy);
+    And(a=invZy, b=invInvZy, out=none1);
+
+    
+    Mux(a=none, b=x[0], sel=invZx, out=zxOutput0);     
+
+    Xor(a=nx, b=x[0], out=xOrNxX0);
+    And(a=xOrNxX0, b=nx, out=neededMx0);
+    Mux(a=neededMx0, b=zxOutput0, sel=invZx, out=nxOutput0);
+
+    Mux(a=none1, b=y[0], sel=invZy, out=zyOutput0);     
+
+    Xor(a=ny, b=y[0], out=xOrNxY0);
+    And(a=xOrNxY0, b=ny, out=neededMy0);
+    Mux(a=neededMy0, b=zyOutput0, sel=invZy, out=nyOutput0);       
+
+
+    HalfAdder(a=nxOutput0, b=nyOutput0, sum=firstSum0, carry=firstCarry0);
+    And(a=nxOutput0, b=nyOutput0, out=firstAnd0);
+    Mux(a=firstSum0, b=firstAnd0, sel=f, out=firstMux0);
+    
+    Not(in=firstMux0, out=nonFirstMux0);
+    Mux(a=firstMux0, b=nonFirstMux0, sel=no, out=out[0]);
+
+
+
+    Mux(a=none, b=x[1], sel=invZx, out=zxOutput1);     
+
+    Xor(a=nx, b=x[1], out=xOrNxX1);
+    And(a=xOrNxX1, b=nx, out=neededMx1);
+    Mux(a=neededMx1, b=zxOutput1, sel=invZx, out=nxOutput1);
+
+    Mux(a=none1, b=y[1], sel=invZy, out=zyOutput1);     
+
+    Xor(a=ny, b=y[1], out=xOrNxY1);
+    And(a=xOrNxY1, b=ny, out=neededMy1);
+    Mux(a=neededMy1, b=zyOutput1, sel=invZy, out=nyOutput1);       
+
+
+    HalfAdder(a=nxOutput1, b=nyOutput1, sum=firstSum1, carry=firstCarry1);
+    And(a=nxOutput1, b=nyOutput1, out=firstAnd1);
+    Mux(a=firstSum1, b=firstAnd1, sel=f, out=firstMux1);
+    
+    Not(in=firstMux1, out=nonFirstMux1);
+    Mux(a=firstMux1, b=nonFirstMux1, sel=no, out=out[1]);
+ 
+
+    Mux(a=none, b=x[2], sel=invZx, out=zxOutput2);     
+
+    Xor(a=nx, b=x[2], out=xOrNxX2);
+    And(a=xOrNxX2, b=nx, out=neededMx2);
+    Mux(a=neededMx2, b=zxOutput2, sel=invZx, out=nxOutput2);
+
+    Mux(a=none1, b=y[2], sel=invZy, out=zyOutput2);     
+
+    Xor(a=ny, b=y[2], out=xOrNxY2);
+    And(a=xOrNxY2, b=ny, out=neededMy2);
+    Mux(a=neededMy2, b=zyOutput2, sel=invZy, out=nyOutput2);       
+
+
+    HalfAdder(a=nxOutput2, b=nyOutput2, sum=firstSum2, carry=firstCarry2);
+    And(a=nxOutput2, b=nyOutput2, out=firstAnd2);
+    Mux(a=firstSum2, b=firstAnd2, sel=f, out=firstMux2);
+    
+    Not(in=firstMux2, out=nonFirstMux2);
+    Mux(a=firstMux2, b=nonFirstMux2, sel=no, out=out[2]);
+
+
+    Mux(a=none, b=x[3], sel=invZx, out=zxOutput3);     
+
+    Xor(a=nx, b=x[3], out=xOrNxX3);
+    And(a=xOrNxX3, b=nx, out=neededMx3);
+    Mux(a=neededMx3, b=zxOutput3, sel=invZx, out=nxOutput3);
+
+    Mux(a=none1, b=y[3], sel=invZy, out=zyOutput3);     
+
+    Xor(a=ny, b=y[3], out=xOrNxY3);
+    And(a=xOrNxY3, b=ny, out=neededMy3);
+    Mux(a=neededMy3, b=zyOutput3, sel=invZy, out=nyOutput3);       
+
+
+    HalfAdder(a=nxOutput3, b=nyOutput3, sum=firstSum3, carry=firstCarry3);
+    And(a=nxOutput3, b=nyOutput3, out=firstAnd3);
+    Mux(a=firstSum3, b=firstAnd3, sel=f, out=firstMux3);
+    
+    Not(in=firstMux3, out=nonFirstMux3);
+    Mux(a=firstMux3, b=nonFirstMux3, sel=no, out=out[3]);
+   
+    Mux(a=none, b=x[4], sel=invZx, out=zxOutput4);     
+
+    Xor(a=nx, b=x[4], out=xOrNxX4);
+    And(a=xOrNxX4, b=nx, out=neededMx4);
+    Mux(a=neededMx4, b=zxOutput4, sel=invZx, out=nxOutput4);
+
+    Mux(a=none1, b=y[4], sel=invZy, out=zyOutput4);     
+
+    Xor(a=ny, b=y[4], out=xOrNxY4);
+    And(a=xOrNxY4, b=ny, out=neededMy4);
+    Mux(a=neededMy4, b=zyOutput4, sel=invZy, out=nyOutput4);       
+
+
+    HalfAdder(a=nxOutput4, b=nyOutput4, sum=firstSum4, carry=firstCarry4);
+    And(a=nxOutput4, b=nyOutput4, out=firstAnd4);
+    Mux(a=firstSum4, b=firstAnd4, sel=f, out=firstMux4);
+    
+    Not(in=firstMux4, out=nonFirstMux4);
+    Mux(a=firstMux4, b=nonFirstMux4, sel=no, out=out[4]);
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput6, b=nyOutput6, sum=firstSum6, carry=firstCarry6);
+    And(a=nxOutput6, b=nyOutput6, out=firstAnd6);
+    Mux(a=firstSum6, b=firstAnd6, sel=f, out=firstMux6);
+    
+    Not(in=firstMux5, out=nonFirstMux6);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+ 
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+ 
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+ 
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+    Mux(a=none, b=x[5], sel=invZx, out=zxOutput5);     
+
+    Xor(a=nx, b=x[5], out=xOrNxX5);
+    And(a=xOrNxX5, b=nx, out=neededMx5);
+    Mux(a=neededMx5, b=zxOutput5, sel=invZx, out=nxOutput5);
+
+    Mux(a=none1, b=y[5], sel=invZy, out=zyOutput5);     
+
+    Xor(a=ny, b=y[5], out=xOrNxY5);
+    And(a=xOrNxY5, b=ny, out=neededMy5);
+    Mux(a=neededMy5, b=zyOutput5, sel=invZy, out=nyOutput5);       
+
+
+    HalfAdder(a=nxOutput5, b=nyOutput5, sum=firstSum5, carry=firstCarry5);
+    And(a=nxOutput5, b=nyOutput5, out=firstAnd5);
+    Mux(a=firstSum5, b=firstAnd5, sel=f, out=firstMux5);
+    
+    Not(in=firstMux5, out=nonFirstMux5);
+    Mux(a=firstMux5, b=nonFirstMux5, sel=no, out=out[5]);
+
+
+
+}
